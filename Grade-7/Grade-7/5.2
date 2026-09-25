@@ -1,0 +1,68 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Servo.h>
+#define TRIG_PIN 10
+#define ECHO_PIN 9
+#define FULL_DISTANCE 5 // Example distance in cm to indicate "bin full"
+#define OPEN_DISTANCE 15 // Example distance to trigger lid opening
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Adjust I2C address if needed
+Servo myServo;
+
+void setup() {
+pinMode(TRIG_PIN, OUTPUT);
+pinMode(ECHO_PIN, INPUT);
+lcd.init ();
+lcd.backlight();
+myServo.attach(6); // Connect servo to pin 10
+myServo.write(0); // Initial position (lid closed)
+lcd.print("Smart Trash Bin");
+delay(2000);
+lcd.clear();
+}
+
+void loop() {
+long distance = measureDistance();
+
+if (distance > 0 && distance < OPEN_DISTANCE) {
+openLid();
+lcd.clear();
+lcd.setCursor(0, 0);
+lcd.print("Welcome!");
+} 
+
+else if (distance > 0 && distance <= FULL_DISTANCE) {
+lcd.clear();
+lcd.setCursor(0, 0);
+lcd.print("Bin Full!");
+// Optional: Add a buzzer or additional alert for "bin full"
+}
+
+else {
+closeLid();
+lcd.clear();
+lcd.setCursor(0, 0);
+lcd.print("Ready to Open");
+}
+delay(500);
+}
+
+void openLid() {
+myServo.write(90); // Open the lid
+delay(3000); // Keep it open for 3 seconds
+}
+
+void closeLid() {
+myServo.write(0); // Close the lid
+}
+
+long measureDistance() {
+digitalWrite(TRIG_PIN, LOW);
+delayMicroseconds(2);
+digitalWrite(TRIG_PIN, HIGH);
+delayMicroseconds(10);
+digitalWrite(TRIG_PIN, LOW);
+long duration = pulseIn(ECHO_PIN, HIGH);
+long distance = duration * 0.034 / 2;
+return distance;
+}
